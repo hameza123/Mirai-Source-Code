@@ -141,7 +141,7 @@ git checkout v1.0.12
 
 # Clone and patch Mirai
 cd ~
-git clone https://github.com/jgamblin/Mirai-Source-Code.git
+git clone https://github.com/hameza123/Mirai-Source-Code.git
 cd Mirai-Source-Code
 
 # Apply your patch
@@ -273,7 +273,7 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       loader/' /etc/hosts
 
 # Clone and patch Mirai
 cd ~
-git clone https://github.com/jgamblin/Mirai-Source-Code.git
+git clone https://github.com/hameza123/Mirai-Source-Code.git
 cd Mirai-Source-Code
 
 # Apply your patch
