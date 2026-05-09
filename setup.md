@@ -15,10 +15,12 @@
 
 3. **router setup:**
 - echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf // IP of the cnc
-
+4. mirai/bot/main.c
+-      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
 ---
 
 ## ROUTER VM (Ubuntu 22.04) - Complete Setup
+
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -35,7 +37,7 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 # Configure DNS
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf
+echo "address=/cnc.local/172.31.29.220" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 

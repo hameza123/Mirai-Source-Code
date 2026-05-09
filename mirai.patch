@@ -76,7 +76,7 @@ index ea1f62d..209cfd6 100755
      util_zero(&addr, sizeof (struct sockaddr_in));
      addr.sin_family = AF_INET;
 -    addr.sin_addr.s_addr = INET_ADDR(8,8,8,8);
-+    addr.sin_addr.s_addr = INET_ADDR(192,168,1,55);
++    addr.sin_addr.s_addr = INET_ADDR(172,31,30,151);
      addr.sin_port = htons(53);
  
      // Set up the dns query
