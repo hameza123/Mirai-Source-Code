@@ -277,7 +277,8 @@ sudo sed -i 's/127.0.1.1.*/127.0.1.1       loader/' /etc/hosts
 cd ~
 git clone https://github.com/hameza123/Mirai-Source-Code.git
 cd Mirai-Source-Code
-
+ 
+ 
 # Apply your patch
 git apply  mirai.patch 
 
