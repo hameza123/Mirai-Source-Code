@@ -34,8 +34,8 @@ int main(int argc, char **args)
     addrs_len = 2;
     addrs = calloc(addrs_len, sizeof (ipv4_t));
 
-    addrs[0] = inet_addr("172.31.16.51"); // Address to bind to
-    addrs[1] = inet_addr("172.31.16.51"); // Address to bind to
+    addrs[0] = inet_addr("13.60.90.46"); // Address to bind to
+    addrs[1] = inet_addr("13.60.90.46"); // Address to bind to
 #endif
 
     if (argc == 2)
@@ -50,7 +50,7 @@ int main(int argc, char **args)
     }
 
     /*                                                                                   wget address           tftp address */
-    if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 1024 * 64, "172.31.16.51", 80, "172.31.16.51")) == NULL)
+    if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 1024 * 64, "13.60.90.46", 80, "13.60.90.46")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;
