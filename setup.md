@@ -380,10 +380,10 @@ cd ~/Mirai-Source-Code/loader/
 gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
 
 # If that fails, try without static linking
-gcc -lefence -g -DDEBUG -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
+#gcc -lefence -g -DDEBUG -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
 
 # Or with -fcommon (GCC 10+ fix)
-gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 -fcommon src/*.c -o ~/mirai/loader.dbg
+#gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 -fcommon src/*.c -o ~/mirai/loader.dbg
 
 
 # Create bins directory for droppers
