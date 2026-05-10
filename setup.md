@@ -26,7 +26,7 @@
 sudo apt update && sudo apt upgrade -y
 
 # Install packages
-sudo apt install -y iptables-persistent dnsmasq busybox-static make gcc
+sudo apt install -y iptables-persistent  busybox-static make gcc
 #sudo apt install  dnsmasq -y
 
 
