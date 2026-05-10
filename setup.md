@@ -257,6 +257,8 @@ export CGO_ENABLED=0
 go build -o ~/mirai/cnc mirai/cnc/*.go
 go build -o ~/mirai/report mirai/tools/scanListen.go
 echo "CNC VM configured!"
+
+screen -S cnc sudo ~/mirai/cnc
 ```
 
 ---
@@ -513,8 +515,10 @@ ping -c 2 192.168.1.14
 
 ### Check DNS Resolution:
 ```bash
-nslookup cnc.local 192.168.1.11
-# Should return: 192.168.1.12
+ 
+# Toutes les communications entre ces deux IPs
+sudo tcpdump -i ens33 -n host 172.16.193.194 and host 172.16.193.197
+ 
 ```
 
 ### Check CNC is Running:

