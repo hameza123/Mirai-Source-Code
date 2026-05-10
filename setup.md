@@ -27,6 +27,7 @@ sudo apt update && sudo apt upgrade -y
 
 # Install packages
 sudo apt install -y iptables-persistent dnsmasq busybox-static make gcc
+#sudo apt install  dnsmasq -y
 
 
 # Set hostname
@@ -35,11 +36,11 @@ sudo hostnamectl set-hostname router
 sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 
 # Configure DNS
-sudo systemctl stop systemd-resolved
-sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/172.31.29.220" | sudo tee -a /etc/dnsmasq.conf
-sudo systemctl enable dnsmasq
-sudo systemctl start dnsmasq
+#sudo systemctl stop systemd-resolved
+#sudo systemctl disable systemd-resolved
+#echo "address=/cnc.local/172.31.29.220" | sudo tee -a /etc/dnsmasq.conf
+#sudo systemctl enable dnsmasq
+#sudo systemctl start dnsmasq
 
 # Set root password
 echo "root:root" | sudo chpasswd
