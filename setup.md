@@ -15,7 +15,7 @@
 
 3. **router setup:**
 - echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf // IP of the cnc
-4. mirai/bot/main.c
+4. **mirai/bot/main.c**
 -      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
 ---
 
@@ -278,7 +278,7 @@ cd ~
 git clone https://github.com/hameza123/Mirai-Source-Code.git
 cd Mirai-Source-Code
  
- 
+
 # Apply your patch
 git apply  mirai.patch 
 
