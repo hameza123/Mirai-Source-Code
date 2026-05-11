@@ -137,7 +137,7 @@ index 615aa93..d5170db 100755
 +    //       (o1 == 6 || o1 == 7 || o1 == 11 || o1 == 21 || o1 == 22 || o1 == 26 || o1 == 28 || o1 == 29 || o1 == 30 || o1 == 33 || o1 == 55 || o1 == 214 || o1 == 215) // Department of Defense
 +    // );
 +
-+    return INET_ADDR(51,21,131,144);
++    return INET_ADDR(13,53,o3,o4);
  }
  
  static int consume_iacs(struct scanner_connection *conn)
