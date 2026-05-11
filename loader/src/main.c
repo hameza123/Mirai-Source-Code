@@ -51,12 +51,12 @@ void auto_scan_lab(void)
     struct telnet_info info;
     uint32_t total = 0;
     
-    printf("Scanning 192.168.1.1 to 192.168.1.254\n\n");
+    printf("Scanning 13.51.86.67\n\n");
     
     for (int i = 1; i <= 254; i++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "172.31.23.%d:23 root:root", i);
+        snprintf(strbuf, sizeof(strbuf), "13.51.86.%d:23 root:root", i);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
