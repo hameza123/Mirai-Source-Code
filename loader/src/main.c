@@ -88,7 +88,7 @@ int main(int argc, char **args)
     // ==================== CONFIGURATION RÉSEAU ====================
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("13.63.167.63");  // IP du Loader
+    addrs[0] = inet_addr("172.31.24.107");  // IP du Loader
 
     if (argc == 2)
         id_tag = args[1];
