@@ -68,6 +68,7 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable telnetd.service
 sudo systemctl start telnetd.service
+sudo systemctl status telnetd.service
 # On Router VM after installation
 sudo ln -s /usr/bin/busybox /bin/busybox
 ```
