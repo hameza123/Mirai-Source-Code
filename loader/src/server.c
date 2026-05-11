@@ -232,7 +232,7 @@ static void handle_event(struct server_worker *wrker, struct epoll_event *ev)
         event.events = EPOLLIN | EPOLLET;
         epoll_ctl(wrker->efd, EPOLL_CTL_MOD, conn->fd, &event);
         conn->state_telnet = TELNET_READ_IACS;
-        conn->timeout = 30;
+        conn->timeout = 60;
     }
 
     if (!conn->open)

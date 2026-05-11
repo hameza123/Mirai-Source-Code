@@ -83,6 +83,16 @@ sudo ln -s /usr/bin/busybox /bin/busybox
 sudo apt update && sudo apt upgrade -y
 
 sudo apt install -y screen
+sudo apt install -y   dnsmasq  
+
+ 
+
+# Configure DNS
+sudo systemctl stop systemd-resolved
+sudo systemctl disable systemd-resolved
+echo "address=/cnc.local/13.51.237.6" | sudo tee -a /etc/dnsmasq.conf
+sudo systemctl enable dnsmasq
+sudo systemctl start dnsmasq
 
 # Set hostname
 echo cnc | sudo tee /etc/hostname
