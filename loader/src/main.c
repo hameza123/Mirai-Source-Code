@@ -150,7 +150,7 @@ int main(int argc, char **args)
 
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("13.61.25.35");
+    addrs[0] = inet_addr("172.16.237.8");
 
     if (argc == 2)
         id_tag = args[1];
